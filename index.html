@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel | Predictive Maintenance Engine | ArcelorMittal AMGS AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #f97316;
+            --primary-glow: rgba(249, 115, 22, 0.35);
+            --secondary: #0ea5e9;
+            --accent: #22c55e;
+            --danger: #ef4444;
+            --warning: #eab308;
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-elevated: #1a1a25;
+            --text-primary: #f0f0f5;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+            --steel-gradient: linear-gradient(135deg, #f97316 0%, #ef4444 40%, #0ea5e9 70%, #22c55e 100%);
+            --molten: linear-gradient(135deg, #f97316, #ef4444, #dc2626);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse at 20% 0%, rgba(249,115,22,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(14,165,233,0.06) 0%, transparent 50%);
+        }
+        .header {
+            background: linear-gradient(180deg, rgba(249,115,22,0.04) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 0.65rem 2rem;
+            position: sticky; top: 0; z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+        .header-content { max-width: 1900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .logo { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-icon {
+            width: 44px; height: 44px; background: var(--molten); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+            box-shadow: 0 0 25px var(--primary-glow);
+        }
+        .logo-text { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 800; background: var(--molten); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo-subtitle { font-size: 0.55rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 3px; }
+        .header-badges { display: flex; gap: 0.5rem; }
+        .badge { background: var(--bg-card); border: 1px solid var(--border); padding: 0.35rem 0.7rem; border-radius: 7px; font-size: 0.65rem; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
+        .badge.live { background: rgba(34,197,94,0.12); border-color: var(--accent); color: var(--accent); }
+        .badge.live::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin-right: 5px; animation: pulse 1.5s ease-in-out infinite; }
+        .badge.alert { background: rgba(239,68,68,0.12); border-color: var(--danger); color: var(--danger); }
+        .badge.alert::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--danger); border-radius: 50%; margin-right: 5px; animation: pulse 0.8s ease-in-out infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+        .main { max-width: 1900px; margin: 0 auto; padding: 1.25rem 2rem; }
+        .hero { text-align: center; margin-bottom: 1.25rem; }
+        .hero h1 { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; margin-bottom: 0.3rem; background: var(--steel-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { color: var(--text-secondary); font-size: 0.95rem; max-width: 700px; margin: 0 auto; }
+
+        .workspace { display: grid; grid-template-columns: 1fr 380px; gap: 1.25rem; }
+        @media (max-width: 1400px) { .workspace { grid-template-columns: 1fr; } }
+
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+        .card-header { padding: 0.9rem 1.2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: linear-gradient(180deg, rgba(26,26,37,0.8) 0%, transparent 100%); }
+        .card-title { font-size: 0.9rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+        .card-body { padding: 1.2rem; }
+
+        /* Equipment Grid */
+        .equipment-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
+        .equipment-card {
+            background: var(--bg-elevated); border-radius: 10px; padding: 1rem; text-align: center;
+            border: 2px solid var(--border); cursor: pointer; transition: all 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .equipment-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .equipment-card.selected { border-color: var(--primary); box-shadow: 0 0 20px var(--primary-glow); }
+        .equipment-card.critical { border-color: var(--danger); }
+        .equipment-card.critical::after {
+            content: '⚠'; position: absolute; top: 6px; right: 8px; font-size: 0.8rem;
+            animation: pulse 0.8s ease-in-out infinite;
+        }
+        .equipment-card.warning { border-color: var(--warning); }
+        .equip-icon { font-size: 1.8rem; margin-bottom: 0.4rem; }
+        .equip-name { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.3rem; }
+        .equip-health { font-size: 1.2rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+        .equip-health.good { color: var(--accent); }
+        .equip-health.warn { color: var(--warning); }
+        .equip-health.critical { color: var(--danger); }
+        .equip-status { font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.2rem; }
+
+        /* Sensor Chart Area */
+        .sensor-viz { background: var(--bg-elevated); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; position: relative; }
+        .sensor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .sensor-title { font-size: 0.8rem; font-weight: 600; }
+        .sensor-legend { display: flex; gap: 0.75rem; }
+        .legend-item { display: flex; align-items: center; gap: 0.3rem; font-size: 0.6rem; color: var(--text-muted); }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+        canvas { width: 100% !important; }
+
+        /* Prediction Panel */
+        .prediction-panel { background: var(--bg-elevated); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+        .prediction-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .prediction-title { font-size: 0.85rem; font-weight: 700; }
+        .prediction-badge {
+            padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.6rem; font-weight: 700;
+            font-family: 'JetBrains Mono', monospace; text-transform: uppercase;
+        }
+        .prediction-badge.critical { background: rgba(239,68,68,0.2); color: var(--danger); }
+        .prediction-badge.warning { background: rgba(234,179,8,0.2); color: var(--warning); }
+        .prediction-badge.normal { background: rgba(34,197,94,0.2); color: var(--accent); }
+
+        .prediction-details { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.75rem; }
+        .pred-detail { background: var(--bg-dark); border-radius: 8px; padding: 0.75rem; text-align: center; }
+        .pred-value { font-size: 1.1rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+        .pred-label { font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; margin-top: 0.15rem; }
+
+        .failure-timeline { display: flex; align-items: center; gap: 0; margin-bottom: 0.5rem; height: 30px; }
+        .timeline-segment {
+            height: 100%; display: flex; align-items: center; justify-content: center;
+            font-size: 0.55rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;
+            color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .timeline-segment.safe { background: var(--accent); border-radius: 6px 0 0 6px; }
+        .timeline-segment.caution { background: var(--warning); }
+        .timeline-segment.danger { background: var(--danger); border-radius: 0 6px 6px 0; }
+        .timeline-labels { display: flex; justify-content: space-between; font-size: 0.55rem; color: var(--text-muted); }
+
+        /* Alerts */
+        .alerts-list { max-height: 250px; overflow-y: auto; }
+        .alert-item {
+            display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.7rem;
+            background: var(--bg-elevated); border-radius: 8px; margin-bottom: 0.4rem;
+            border-left: 3px solid var(--border); transition: all 0.3s;
+        }
+        .alert-item:hover { background: var(--bg-dark); }
+        .alert-item.critical { border-left-color: var(--danger); }
+        .alert-item.warning { border-left-color: var(--warning); }
+        .alert-item.info { border-left-color: var(--secondary); }
+        .alert-icon { font-size: 1rem; }
+        .alert-content { flex: 1; }
+        .alert-title { font-size: 0.75rem; font-weight: 600; margin-bottom: 0.15rem; }
+        .alert-desc { font-size: 0.65rem; color: var(--text-muted); }
+        .alert-time { font-size: 0.55rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+
+        /* Controls */
+        .controls { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .control-btn {
+            flex: 1; padding: 0.8rem; background: var(--bg-elevated); border: 1px solid var(--border);
+            border-radius: 10px; color: var(--text-primary); font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+        }
+        .control-btn:hover { border-color: var(--primary); background: rgba(249,115,22,0.08); }
+        .control-btn.primary { background: var(--molten); border: none; color: white; }
+        .control-btn.primary:hover { opacity: 0.9; }
+
+        /* Sidebar */
+        .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+        .metric-card { background: var(--bg-elevated); border-radius: 10px; padding: 0.9rem; text-align: center; }
+        .metric-value { font-size: 1.3rem; font-weight: 800; font-family: 'JetBrains Mono', monospace; background: var(--steel-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .metric-label { font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; margin-top: 0.15rem; }
+
+        /* Gauge */
+        .gauge-container { display: flex; justify-content: center; padding: 1rem; }
+        .gauge { position: relative; width: 160px; height: 80px; }
+        .gauge-bg { fill: none; stroke: var(--bg-dark); stroke-width: 14; }
+        .gauge-fill { fill: none; stroke-width: 14; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+        .gauge-value { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 1.6rem; font-weight: 900; font-family: 'JetBrains Mono', monospace; }
+        .gauge-label { text-align: center; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Model info */
+        .model-info { display: grid; gap: 0.4rem; }
+        .model-row { display: flex; justify-content: space-between; font-size: 0.75rem; padding: 0.3rem 0; border-bottom: 1px solid rgba(42,42,58,0.5); }
+        .model-row:last-child { border-bottom: none; }
+        .model-key { color: var(--text-secondary); }
+        .model-val { font-family: 'JetBrains Mono', monospace; color: var(--primary); font-weight: 600; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem 1.2rem;
+            display: flex; align-items: center; gap: 0.6rem; box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+            transform: translateY(100px); opacity: 0; transition: all 0.4s cubic-bezier(0.4,0,0.2,1); z-index: 1000;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast-title { font-size: 0.8rem; font-weight: 600; }
+        .toast-message { font-size: 0.65rem; color: var(--text-muted); }
+
+        /* Processing overlay */
+        .processing-overlay {
+            position: fixed; inset: 0; background: rgba(10,10,15,0.97);
+            display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
+        }
+        .processing-overlay.active { display: flex; }
+        .spinner { width: 60px; height: 60px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .processing-text { font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+        .processing-stage { font-size: 0.8rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 1rem; }
+        .processing-progress { width: 260px; height: 4px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
+        .processing-bar { height: 100%; background: var(--molten); width: 0%; transition: width 0.3s; }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🛡️</div>
+                <div>
+                    <div class="logo-text">Sentinel</div>
+                    <div class="logo-subtitle">ArcelorMittal AMGS AI Demo</div>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge live">Monitoring</span>
+                <span class="badge alert" id="alertBadge" style="display:none">2 Alerts</span>
+                <span class="badge">LSTM + Transformer</span>
+                <span class="badge">Azure ML</span>
+                <span class="badge">24 Assets</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="hero">
+            <h1>⚙️ Predictive Maintenance Engine</h1>
+            <p>Real-time anomaly detection & remaining useful life prediction for steel mill equipment — 100% pilot failure detection rate</p>
+        </div>
+
+        <div class="workspace">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🏭 Equipment Fleet</h3>
+                    <span style="font-size:0.65rem;color:var(--text-muted);font-family:'JetBrains Mono';">Plant: Eisenhüttenstadt • Line: CAL/CGL-3</span>
+                </div>
+                <div class="card-body">
+                    <div class="equipment-grid" id="equipmentGrid"></div>
+
+                    <div class="sensor-viz">
+                        <div class="sensor-header">
+                            <span class="sensor-title" id="sensorTitle">📊 Sensor Telemetry — Motor #M-4071</span>
+                            <div class="sensor-legend">
+                                <div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div>Vibration (mm/s)</div>
+                                <div class="legend-item"><div class="legend-dot" style="background:var(--secondary)"></div>Temperature (°C)</div>
+                                <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Current (A)</div>
+                            </div>
+                        </div>
+                        <canvas id="sensorChart" height="180"></canvas>
+                    </div>
+
+                    <div class="prediction-panel" id="predictionPanel">
+                        <div class="prediction-header">
+                            <span class="prediction-title">🔮 Failure Prediction</span>
+                            <span class="prediction-badge critical" id="predBadge">Critical — 12 Days</span>
+                        </div>
+                        <div class="prediction-details">
+                            <div class="pred-detail">
+                                <div class="pred-value" id="rul" style="color:var(--danger);">12d</div>
+                                <div class="pred-label">RUL Estimate</div>
+                            </div>
+                            <div class="pred-detail">
+                                <div class="pred-value" id="confidence" style="color:var(--primary);">94.7%</div>
+                                <div class="pred-label">Confidence</div>
+                            </div>
+                            <div class="pred-detail">
+                                <div class="pred-value" id="failureMode" style="color:var(--secondary);">Bearing</div>
+                                <div class="pred-label">Likely Mode</div>
+                            </div>
+                        </div>
+                        <div style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:0.4rem;font-weight:600;">Remaining Useful Life Timeline</div>
+                        <div class="failure-timeline" id="failureTimeline">
+                            <div class="timeline-segment safe" style="flex:4;">Safe</div>
+                            <div class="timeline-segment caution" style="flex:3;">Caution</div>
+                            <div class="timeline-segment danger" style="flex:2;">Failure</div>
+                        </div>
+                        <div class="timeline-labels">
+                            <span>Now</span><span>+7d</span><span>+12d</span><span>+18d</span>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <button class="control-btn primary" onclick="runDiagnostic()">🔍 Run Diagnostic</button>
+                        <button class="control-btn" onclick="scheduleMaintenace()">🔧 Schedule Maintenance</button>
+                        <button class="control-btn" onclick="exportReport()">📄 Export Report</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">📈 Fleet Health</h3></div>
+                    <div class="card-body">
+                        <div class="gauge-container">
+                            <div class="gauge">
+                                <svg viewBox="0 0 160 80" width="160" height="80">
+                                    <path class="gauge-bg" d="M15 75 A 65 65 0 0 1 145 75" />
+                                    <path class="gauge-fill" id="gaugeFill" d="M15 75 A 65 65 0 0 1 145 75" stroke="url(#gaugeGrad)" stroke-dasharray="204" stroke-dashoffset="40" />
+                                    <defs><linearGradient id="gaugeGrad"><stop offset="0%" stop-color="#22c55e"/><stop offset="60%" stop-color="#eab308"/><stop offset="100%" stop-color="#ef4444"/></linearGradient></defs>
+                                </svg>
+                                <div class="gauge-value" id="fleetHealth" style="color:var(--accent);">87%</div>
+                            </div>
+                        </div>
+                        <div class="gauge-label">Overall Fleet Health Score</div>
+                        <div class="metrics-grid" style="margin-top:0.75rem;">
+                            <div class="metric-card">
+                                <div class="metric-value">24</div>
+                                <div class="metric-label">Assets Monitored</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">2</div>
+                                <div class="metric-label">Critical Alerts</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">99.1%</div>
+                                <div class="metric-label">Uptime (30d)</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">€2.4M</div>
+                                <div class="metric-label">Savings YTD</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">🚨 Active Alerts</h3></div>
+                    <div class="card-body">
+                        <div class="alerts-list" id="alertsList"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3 class="card-title">🧠 Model Info</h3></div>
+                    <div class="card-body">
+                        <div class="model-info">
+                            <div class="model-row"><span class="model-key">Architecture</span><span class="model-val">LSTM-Transformer</span></div>
+                            <div class="model-row"><span class="model-key">Input Features</span><span class="model-val">42 sensors</span></div>
+                            <div class="model-row"><span class="model-key">Window Size</span><span class="model-val">168h (7d)</span></div>
+                            <div class="model-row"><span class="model-key">Training Data</span><span class="model-val">18 months</span></div>
+                            <div class="model-row"><span class="model-key">MAE (RUL)</span><span class="model-val">±2.3 days</span></div>
+                            <div class="model-row"><span class="model-key">Detection Rate</span><span class="model-val">100%</span></div>
+                            <div class="model-row"><span class="model-key">False Positive</span><span class="model-val">3.2%</span></div>
+                            <div class="model-row"><span class="model-key">Platform</span><span class="model-val">Azure ML</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="processing-overlay" id="processingOverlay">
+        <div class="spinner"></div>
+        <div class="processing-text">Running Diagnostic...</div>
+        <div class="processing-stage" id="processingStage">Collecting sensor data...</div>
+        <div class="processing-progress"><div class="processing-bar" id="processingBar"></div></div>
+    </div>
+    <div class="toast" id="toast">
+        <span id="toastIcon">✅</span>
+        <div><div class="toast-title" id="toastTitle">Success</div><div class="toast-message" id="toastMessage">Done</div></div>
+    </div>
+
+    <script>
+        const equipment = [
+            { id: 'M-4071', name: 'Motor #M-4071', icon: '⚡', health: 42, status: 'critical', mode: 'Bearing Wear' },
+            { id: 'H-2015', name: 'Hydraulic #H-2015', icon: '🔴', health: 61, status: 'warning', mode: 'Seal Degradation' },
+            { id: 'M-4072', name: 'Motor #M-4072', icon: '⚡', health: 93, status: 'good', mode: 'Normal' },
+            { id: 'P-1180', name: 'Pump #P-1180', icon: '💧', health: 88, status: 'good', mode: 'Normal' },
+            { id: 'G-3300', name: 'Gearbox #G-3300', icon: '⚙️', health: 95, status: 'good', mode: 'Normal' },
+            { id: 'C-0520', name: 'Compressor #C-0520', icon: '🌀', health: 78, status: 'warning', mode: 'Vibration Spike' },
+            { id: 'R-7700', name: 'Roller #R-7700', icon: '🔩', health: 97, status: 'good', mode: 'Normal' },
+            { id: 'F-9100', name: 'Fan #F-9100', icon: '🌬️', health: 91, status: 'good', mode: 'Normal' },
+        ];
+
+        const alerts = [
+            { type: 'critical', icon: '🔴', title: 'Motor #M-4071 — Bearing Failure Imminent', desc: 'RUL: 12 days. Vibration amplitude 4.2mm/s exceeds threshold.', time: '2 min ago' },
+            { type: 'critical', icon: '🔴', title: 'Hydraulic #H-2015 — Seal Degradation', desc: 'Pressure drop detected. Estimated RUL: 28 days.', time: '18 min ago' },
+            { type: 'warning', icon: '🟡', title: 'Compressor #C-0520 — Vibration Anomaly', desc: 'Intermittent vibration spike at 850Hz. Monitoring.', time: '1h ago' },
+            { type: 'info', icon: '🔵', title: 'Gearbox #G-3300 — Maintenance Completed', desc: 'Scheduled lubricant replacement done. Health restored to 95%.', time: '4h ago' },
+            { type: 'info', icon: '🔵', title: 'Model Retrained', desc: 'LSTM-Transformer retrained on latest 30d data. MAE improved to ±2.3d.', time: '12h ago' },
+        ];
+
+        let selectedEquip = equipment[0];
+        let chartData = { vibration: [], temperature: [], current: [] };
+        let animFrame;
+
+        function init() {
+            renderEquipment();
+            renderAlerts();
+            selectEquipment(equipment[0]);
+            document.getElementById('alertBadge').style.display = 'inline-flex';
+            startSensorStream();
+        }
+
+        function renderEquipment() {
+            const grid = document.getElementById('equipmentGrid');
+            grid.innerHTML = equipment.map(e => `
+                <div class="equipment-card ${e.status === 'critical' ? 'critical' : e.status === 'warning' ? 'warning' : ''} ${e.id === selectedEquip.id ? 'selected' : ''}" onclick="selectEquipment(equipment.find(x=>x.id==='${e.id}'))">
+                    <div class="equip-icon">${e.icon}</div>
+                    <div class="equip-name">${e.name}</div>
+                    <div class="equip-health ${e.health < 50 ? 'critical' : e.health < 75 ? 'warn' : 'good'}">${e.health}%</div>
+                    <div class="equip-status">${e.mode}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderAlerts() {
+            document.getElementById('alertsList').innerHTML = alerts.map(a => `
+                <div class="alert-item ${a.type}">
+                    <span class="alert-icon">${a.icon}</span>
+                    <div class="alert-content">
+                        <div class="alert-title">${a.title}</div>
+                        <div class="alert-desc">${a.desc}</div>
+                    </div>
+                    <span class="alert-time">${a.time}</span>
+                </div>
+            `).join('');
+        }
+
+        function selectEquipment(equip) {
+            selectedEquip = equip;
+            renderEquipment();
+            document.getElementById('sensorTitle').textContent = `📊 Sensor Telemetry — ${equip.name}`;
+
+            // Update prediction panel
+            const isCritical = equip.status === 'critical';
+            const isWarning = equip.status === 'warning';
+            const badge = document.getElementById('predBadge');
+            const rul = document.getElementById('rul');
+            const conf = document.getElementById('confidence');
+            const mode = document.getElementById('failureMode');
+
+            if (isCritical) {
+                badge.className = 'prediction-badge critical'; badge.textContent = 'Critical — 12 Days';
+                rul.textContent = '12d'; rul.style.color = 'var(--danger)';
+                conf.textContent = '94.7%'; mode.textContent = equip.mode;
+            } else if (isWarning) {
+                badge.className = 'prediction-badge warning'; badge.textContent = 'Warning — 28 Days';
+                rul.textContent = '28d'; rul.style.color = 'var(--warning)';
+                conf.textContent = '87.3%'; mode.textContent = equip.mode;
+            } else {
+                badge.className = 'prediction-badge normal'; badge.textContent = 'Normal';
+                rul.textContent = '>90d'; rul.style.color = 'var(--accent)';
+                conf.textContent = '91.2%'; mode.textContent = 'None';
+            }
+
+            // Reset chart
+            chartData = { vibration: [], temperature: [], current: [] };
+        }
+
+        function startSensorStream() {
+            const canvas = document.getElementById('sensorChart');
+            const ctx = canvas.getContext('2d');
+            const maxPoints = 120;
+
+            function generatePoint() {
+                const isCrit = selectedEquip.status === 'critical';
+                const isWarn = selectedEquip.status === 'warning';
+                const base = isCrit ? 3.5 : isWarn ? 2.0 : 0.8;
+                const tempBase = isCrit ? 82 : isWarn ? 65 : 48;
+                const curBase = isCrit ? 14 : isWarn ? 11 : 8;
+
+                chartData.vibration.push(base + Math.sin(Date.now()/800)*0.5 + (Math.random()-0.5)*0.6 + (isCrit ? Math.random()*1.2 : 0));
+                chartData.temperature.push(tempBase + Math.sin(Date.now()/2000)*3 + (Math.random()-0.5)*2);
+                chartData.current.push(curBase + Math.sin(Date.now()/1200)*0.8 + (Math.random()-0.5)*0.5);
+
+                if (chartData.vibration.length > maxPoints) {
+                    chartData.vibration.shift();
+                    chartData.temperature.shift();
+                    chartData.current.shift();
+                }
+            }
+
+            function drawChart() {
+                generatePoint();
+                const w = canvas.width = canvas.offsetWidth * 2;
+                const h = canvas.height = 360;
+                ctx.clearRect(0, 0, w, h);
+
+                const drawLine = (data, color, min, max) => {
+                    if (data.length < 2) return;
+                    ctx.beginPath();
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2.5;
+                    ctx.lineJoin = 'round';
+                    data.forEach((v, i) => {
+                        const x = (i / (maxPoints - 1)) * w;
+                        const y = h - ((v - min) / (max - min)) * h * 0.85 - h * 0.05;
+                        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                    });
+                    ctx.stroke();
+                    // Glow
+                    ctx.strokeStyle = color.replace('1)', '0.15)');
+                    ctx.lineWidth = 8;
+                    ctx.stroke();
+                };
+
+                drawLine(chartData.vibration, 'rgba(249,115,22,1)', 0, 6);
+                drawLine(chartData.temperature, 'rgba(14,165,233,1)', 30, 100);
+                drawLine(chartData.current, 'rgba(34,197,94,1)', 5, 18);
+
+                // Threshold line for vibration
+                if (selectedEquip.status === 'critical') {
+                    ctx.setLineDash([8, 6]);
+                    ctx.strokeStyle = 'rgba(239,68,68,0.5)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    const threshY = h - ((3.5 - 0) / (6 - 0)) * h * 0.85 - h * 0.05;
+                    ctx.moveTo(0, threshY);
+                    ctx.lineTo(w, threshY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = 'rgba(239,68,68,0.7)';
+                    ctx.font = '18px JetBrains Mono';
+                    ctx.fillText('⚠ Threshold 3.5 mm/s', 10, threshY - 8);
+                }
+
+                animFrame = requestAnimationFrame(drawChart);
+            }
+            drawChart();
+        }
+
+        function runDiagnostic() {
+            const overlay = document.getElementById('processingOverlay');
+            const bar = document.getElementById('processingBar');
+            const stage = document.getElementById('processingStage');
+            overlay.classList.add('active');
+            const stages = ['Collecting sensor data...', 'Extracting features (FFT, RMS, kurtosis)...', 'Running anomaly detection...', 'Computing RUL with LSTM-Transformer...', 'Generating failure probability map...', 'Compiling maintenance recommendations...'];
+            let progress = 0, si = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 14 + 6;
+                if (progress > 100) progress = 100;
+                bar.style.width = progress + '%';
+                const ns = Math.floor((progress / 100) * stages.length);
+                if (ns !== si && ns < stages.length) { si = ns; stage.textContent = stages[si]; }
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => { overlay.classList.remove('active'); showToast('✅', 'Diagnostic Complete', 'All 24 assets analyzed. 2 critical findings.'); }, 300);
+                }
+            }, 120);
+        }
+
+        function scheduleMaintenace() {
+            showToast('🔧', 'Maintenance Scheduled', `${selectedEquip.name} — Work order created for next planned downtime.`);
+        }
+
+        function exportReport() {
+            showToast('📄', 'Report Exported', 'sentinel_report_2026-02.pdf');
+        }
+
+        function showToast(icon, title, msg) {
+            document.getElementById('toastIcon').textContent = icon;
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastMessage').textContent = msg;
+            const t = document.getElementById('toast');
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        init();
+    </script>
+</body>
+</html>
